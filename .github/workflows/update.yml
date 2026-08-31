@@ -8,44 +8,78 @@ on:
 permissions:
   contents: write
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Get latest Nuvio release and repository stats
         id: release
+        shell: bash
         run: |
+          set -euo pipefail
+
           API="https://api.github.com/repos/NuvioMedia/NuvioMobile"
-          RELEASE=$(curl -fsSL "$API/releases/latest")
-          REPO=$(curl -fsSL "$API")
+          AUTH_HEADER=( -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" )
 
-          VERSION=$(echo "$RELEASE" | jq -r '.tag_name')
-          DATE=$(echo "$RELEASE" | jq -r '.published_at')
-          NOTES=$(echo "$RELEASE" | jq -r '.body // "No release notes provided."')
+          RELEASE=$(curl -fsSL "${AUTH_HEADER[@]}" "$API/releases/latest")
+          REPO=$(curl -fsSL "${AUTH_HEADER[@]}" "$API")
 
-          IPA=$(echo "$RELEASE" | jq -c '[.assets[] | select(.name | endswith(".ipa"))][0]')
-          URL=$(echo "$IPA" | jq -r '.browser_download_url')
-          SIZE=$(echo "$IPA" | jq -r '.size')
-          SHA=$(echo "$IPA" | jq -r '.digest // "" | sub("^sha256:"; "")')
+          VERSION=$(jq -er '.tag_name' <<<"$RELEASE")
+          DATE=$(jq -er '.published_at' <<<"$RELEASE")
+          NOTES=$(jq -r '.body // "No release notes provided."' <<<"$RELEASE")
 
-          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
-            echo "No IPA found in the latest release."
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error::Failed to fetch release version."
             exit 1
           fi
 
-          STARS=$(echo "$REPO" | jq -r '.stargazers_count')
-          TOTAL_OPEN=$(echo "$REPO" | jq -r '.open_issues_count')
+          if [ -z "$DATE" ] || [ "$DATE" = "null" ]; then
+            echo "::error::Failed to fetch release date."
+            exit 1
+          fi
 
-          PRS=$(curl -fsSL "$API/pulls?state=open&per_page=100" | jq 'length')
+          IPA=$(jq -c '[.assets[] | select(.name | endswith(".ipa"))][0]' <<<"$RELEASE")
+
+          if [ "$IPA" = "null" ] || [ -z "$IPA" ]; then
+            echo "::error::No IPA found in the latest Nuvio release ($VERSION)."
+            exit 1
+          fi
+
+          URL=$(jq -er '.browser_download_url' <<<"$IPA")
+          SIZE=$(jq -er '.size' <<<"$IPA")
+          SHA=$(jq -r '.digest // "" | sub("^sha256:"; "")' <<<"$IPA")
+
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "::error::IPA download URL is missing for release $VERSION."
+            exit 1
+          fi
+
+          if [ -z "$SIZE" ] || [ "$SIZE" = "null" ]; then
+            echo "::error::IPA size is missing for release $VERSION."
+            exit 1
+          fi
+
+          STARS=$(jq -er '.stargazers_count' <<<"$REPO")
+          TOTAL_OPEN=$(jq -er '.open_issues_count' <<<"$REPO")
+
+          PRS=$(curl -fsSL "${AUTH_HEADER[@]}" "$API/pulls?state=open&per_page=100" | jq 'length')
           ISSUE_COUNT=$((TOTAL_OPEN - PRS))
 
-          COMMITS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/commits?per_page=1" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
+          COMMITS=$(curl -fsSI "${AUTH_HEADER[@]}" "$API/commits?per_page=1" \
+            | tr -d '\r' \
+            | grep -i '^link:' \
+            | grep -o 'page=[0-9]*>; rel="last"' \
+            | tail -1 \
+            | grep -o '[0-9]*' || true)
           if [ -z "$COMMITS" ]; then
-            COMMITS=$(curl -fsSL "$API/commits?per_page=1" | jq 'length')
+            COMMITS=$(curl -fsSL "${AUTH_HEADER[@]}" "$API/commits?per_page=100" | jq 'length')
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -59,10 +93,25 @@ jobs:
           echo "prs=$PRS" >> "$GITHUB_OUTPUT"
 
           {
-            echo "notes<<EOF"
+            echo 'notes<<EOF'
             echo "$NOTES"
-            echo "EOF"
+            echo 'EOF'
           } >> "$GITHUB_OUTPUT"
+
+      - name: Validate source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f source.json || { echo "::error::source.json does not exist."; exit 1; }
+          jq -e '.apps | type == "array" and length > 0' source.json >/dev/null || {
+            echo "::error::source.json has an invalid apps structure."
+            exit 1
+          }
+          jq -e '.apps[0].bundleIdentifier and (.apps[0].versions | type == "array")' source.json >/dev/null || {
+            echo "::error::source.json has an invalid app/version structure."
+            exit 1
+          }
 
       - name: Update source
         env:
@@ -76,7 +125,10 @@ jobs:
           ISSUES: ${{ steps.release.outputs.issues }}
           PRS: ${{ steps.release.outputs.prs }}
           NOTES: ${{ steps.release.outputs.notes }}
+        shell: bash
         run: |
+          set -euo pipefail
+
           printf '%s\n' \
             'Nuvio .ipa source, automatically updated from the official repository.' \
             'https://github.com/NuvioMedia/NuvioMobile' \
@@ -95,7 +147,7 @@ jobs:
           mv source.tmp source.json
 
           if jq -e --arg version "$VERSION" '.apps[0].versions[] | select(.version == $version)' source.json > /dev/null; then
-            echo "Version $VERSION already exists; repository stats were updated only."
+            echo "::notice::Version $VERSION already exists; repository statistics updated only."
             exit 0
           fi
 
@@ -121,7 +173,10 @@ jobs:
           mv source.tmp source.json
 
       - name: Commit changes
+        shell: bash
         run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -133,5 +188,3 @@ jobs:
             git commit -m "Update Nuvio source"
             git push
           fi
-
-# The schedule intentionally runs every 30 minutes.
