@@ -13,37 +13,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Get latest Nuvio release
         id: release
         run: |
           RELEASE=$(curl -fsSL https://api.github.com/repos/NuvioMedia/NuvioMobile/releases/latest)
-
           VERSION=$(echo "$RELEASE" | jq -r '.tag_name')
-          DATE=$(echo "$RELEASE" | jq -r '.published_at | split("T")[0]')
-
-          IPA=$(echo "$RELEASE" | jq -c '.assets[] | select(.name | endswith(".ipa"))')
+          DATE=$(echo "$RELEASE" | jq -r '.published_at')
+          NOTES=$(echo "$RELEASE" | jq -r '.body')
+          IPA=$(echo "$RELEASE" | jq -c '[.assets[] | select(.name | endswith(".ipa"))][0]')
           URL=$(echo "$IPA" | jq -r '.browser_download_url')
           SIZE=$(echo "$IPA" | jq -r '.size')
+          SHA=$(echo "$IPA" | jq -r '.digest // "" | sub("^sha256:"; "")')
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
-      - name: Update source.json
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update source
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          DATE: ${{ steps.release.outputs.date }}
+          URL: ${{ steps.release.outputs.url }}
+          SIZE: ${{ steps.release.outputs.size }}
+          SHA: ${{ steps.release.outputs.sha }}
+          NOTES: ${{ steps.release.outputs.notes }}
         run: |
+          CURRENT=$(jq -r '.apps[0].versions[0].version' source.json)
+
+          if [ "$CURRENT" = "$VERSION" ]; then
+            echo "Already up to date."
+            exit 0
+          fi
+
           jq \
-            --arg version "${{ steps.release.outputs.version }}" \
-            --arg date "${{ steps.release.outputs.date }}" \
-            --arg url "${{ steps.release.outputs.url }}" \
-            --argjson size "${{ steps.release.outputs.size }}" \
-            '.apps[0].version = $version |
-             .apps[0].versionDate = $date |
-             .apps[0].downloadURL = $url |
-             .apps[0].size = $size' \
+            --arg version "$VERSION" \
+            --arg date "$DATE" \
+            --arg url "$URL" \
+            --arg notes "$NOTES" \
+            --arg sha "$SHA" \
+            --argjson size "$SIZE" \
+            '.apps[0].versions |=
+              [{
+                version: $version,
+                date: $date,
+                localizedDescription: $notes,
+                downloadURL: $url,
+                size: $size,
+                sha256: $sha,
+                minOSVersion: "16.1"
+              }] + .' \
             source.json > source.tmp
 
           mv source.tmp source.json
