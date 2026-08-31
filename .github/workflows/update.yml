@@ -133,3 +133,5 @@ jobs:
             git commit -m "Update Nuvio source"
             git push
           fi
+
+# The schedule intentionally runs every 30 minutes.
