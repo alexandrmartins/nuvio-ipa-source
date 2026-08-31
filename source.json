@@ -1,23 +1,37 @@
 {
   "name": "Nuvio",
-  "identifier": "com.alexandrmartins.nuvio",
-  "sourceURL": "https://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json",
+  "subtitle": "A free, open-source media app.",
+  "description": "A free, open-source media app for your phone, your desktop, and the TV you already own.",
+  "website": "https://nuvio.tv",
+  "iconURL": "https://raw.githubusercontent.com/NuvioMedia/NuvioMobile/0.4.11/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+  "tintColor": "#1E88E5",
+  "featuredApps": ["com.nuvio.media"],
   "apps": [
     {
       "name": "Nuvio",
-      "bundleIdentifier": "app.nuvio.mobile",
+      "bundleIdentifier": "com.nuvio.media",
       "developerName": "NuvioMedia",
-      "localizedDescription": "Nuvio é uma aplicação multimédia de código aberto.",
-      "iconURL": "https://raw.githubusercontent.com/NuvioMedia/NuvioMobile/main/composeApp/src/commonMain/composeResources/drawable/app_icon.png",
+      "subtitle": "A free, open-source media app.",
+      "localizedDescription": "A free, open-source media app for your phone, your desktop, and the TV you already own.",
+      "iconURL": "https://raw.githubusercontent.com/NuvioMedia/NuvioMobile/0.4.11/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+      "tintColor": "#1E88E5",
+      "category": "entertainment",
       "versions": [
         {
           "version": "0.4.13",
-          "date": "2026-08-30",
+          "date": "2026-08-30T19:02:51Z",
+          "localizedDescription": "Latest Nuvio release.",
           "downloadURL": "https://github.com/NuvioMedia/NuvioMobile/releases/download/0.4.13/nuvio-0.4.13-full-release.ipa",
           "size": 51726937,
-          "localizedDescription": "Versão 0.4.13 do Nuvio."
+          "sha256": "1e4458b0613c6e827459f02b6922d2c06e0e246624a097dac0a80bfc1dfb7c5a",
+          "minOSVersion": "16.1"
         }
-      ]
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
-  ]
+  ],
+  "news": []
 }
