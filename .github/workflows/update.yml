@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get latest Nuvio release and repository stats
         id: release
@@ -40,22 +40,15 @@ jobs:
           STARS=$(echo "$REPO" | jq -r '.stargazers_count')
           TOTAL_OPEN=$(echo "$REPO" | jq -r '.open_issues_count')
 
-          PR_HEADERS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/pulls?state=open&per_page=1")
-          PRS=$(echo "$PR_HEADERS" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
-          if [ -z "$PRS" ]; then
-            PRS=$(curl -fsSL "$API/pulls?state=open&per_page=1" | jq 'length')
-          fi
-
+          PRS=$(curl -fsSL "$API/pulls?state=open&per_page=100" | jq 'length')
           ISSUE_COUNT=$((TOTAL_OPEN - PRS))
 
-          COMMIT_HEADERS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/commits?per_page=1")
-          COMMITS=$(echo "$COMMIT_HEADERS" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
+          COMMITS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/commits?per_page=1" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
           if [ -z "$COMMITS" ]; then
             COMMITS=$(curl -fsSL "$API/commits?per_page=1" | jq 'length')
           fi
 
-          CONTRIBUTOR_HEADERS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/contributors?per_page=1")
-          CONTRIBUTORS=$(echo "$CONTRIBUTOR_HEADERS" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
+          CONTRIBUTORS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/contributors?per_page=1" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
           if [ -z "$CONTRIBUTORS" ]; then
             CONTRIBUTORS=$(curl -fsSL "$API/contributors?per_page=1" | jq 'length')
           fi
