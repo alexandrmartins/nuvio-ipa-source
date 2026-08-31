@@ -16,10 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get latest Nuvio release
+      - name: Get latest Nuvio release and repository stats
         id: release
         run: |
-          RELEASE=$(curl -fsSL https://api.github.com/repos/NuvioMedia/NuvioMobile/releases/latest)
+          API="https://api.github.com/repos/NuvioMedia/NuvioMobile"
+          RELEASE=$(curl -fsSL "$API/releases/latest")
+          REPO=$(curl -fsSL "$API")
 
           VERSION=$(echo "$RELEASE" | jq -r '.tag_name')
           DATE=$(echo "$RELEASE" | jq -r '.published_at')
@@ -35,11 +37,39 @@ jobs:
             exit 1
           fi
 
+          STARS=$(echo "$REPO" | jq -r '.stargazers_count')
+          TOTAL_OPEN=$(echo "$REPO" | jq -r '.open_issues_count')
+
+          PR_HEADERS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/pulls?state=open&per_page=1")
+          PRS=$(echo "$PR_HEADERS" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
+          if [ -z "$PRS" ]; then
+            PRS=$(curl -fsSL "$API/pulls?state=open&per_page=1" | jq 'length')
+          fi
+
+          ISSUE_COUNT=$((TOTAL_OPEN - PRS))
+
+          COMMIT_HEADERS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/commits?per_page=1")
+          COMMITS=$(echo "$COMMIT_HEADERS" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
+          if [ -z "$COMMITS" ]; then
+            COMMITS=$(curl -fsSL "$API/commits?per_page=1" | jq 'length')
+          fi
+
+          CONTRIBUTOR_HEADERS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/contributors?per_page=1")
+          CONTRIBUTORS=$(echo "$CONTRIBUTOR_HEADERS" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
+          if [ -z "$CONTRIBUTORS" ]; then
+            CONTRIBUTORS=$(curl -fsSL "$API/contributors?per_page=1" | jq 'length')
+          fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "size=$SIZE" >> "$GITHUB_OUTPUT"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "stars=$STARS" >> "$GITHUB_OUTPUT"
+          echo "contributors=$CONTRIBUTORS" >> "$GITHUB_OUTPUT"
+          echo "commits=$COMMITS" >> "$GITHUB_OUTPUT"
+          echo "issues=$ISSUE_COUNT" >> "$GITHUB_OUTPUT"
+          echo "prs=$PRS" >> "$GITHUB_OUTPUT"
 
           {
             echo "notes<<EOF"
@@ -47,17 +77,27 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Add new version to source
+      - name: Update source
         env:
           VERSION: ${{ steps.release.outputs.version }}
           DATE: ${{ steps.release.outputs.date }}
           URL: ${{ steps.release.outputs.url }}
           SIZE: ${{ steps.release.outputs.size }}
           SHA: ${{ steps.release.outputs.sha }}
+          STARS: ${{ steps.release.outputs.stars }}
+          CONTRIBUTORS: ${{ steps.release.outputs.contributors }}
+          COMMITS: ${{ steps.release.outputs.commits }}
+          ISSUES: ${{ steps.release.outputs.issues }}
+          PRS: ${{ steps.release.outputs.prs }}
           NOTES: ${{ steps.release.outputs.notes }}
         run: |
+          jq \
+            --arg description "Nuvio .ipa source, automatically updated from the official repository.\nhttps://github.com/NuvioMedia/NuvioMobile\n⭐ $STARS stars · 👥 $CONTRIBUTORS contributors · 💻 $COMMITS commits\n🐛 $ISSUES open issues · 🔀 $PRS open pull requests\n\nView this SideStore source on GitHub\nhttps://github.com/alexandrmartins/nuvio-ipa-source\nAdd this source to SideStore\nhttps://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json" \
+            '.description = $description' source.json > source.tmp
+          mv source.tmp source.json
+
           if jq -e --arg version "$VERSION" '.apps[0].versions[] | select(.version == $version)' source.json > /dev/null; then
-            echo "Version $VERSION already exists in source.json."
+            echo "Version $VERSION already exists; repository stats were updated only."
             exit 0
           fi
 
@@ -92,6 +132,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No update available."
           else
-            git commit -m "Update Nuvio to ${{ steps.release.outputs.version }}"
+            git commit -m "Update Nuvio source"
             git push
           fi
