@@ -84,8 +84,20 @@ jobs:
           PRS: ${{ steps.release.outputs.prs }}
           NOTES: ${{ steps.release.outputs.notes }}
         run: |
-          jq \
-            --arg description "Nuvio .ipa source, automatically updated from the official repository.\nhttps://github.com/NuvioMedia/NuvioMobile\n⭐ $STARS stars · 👥 $CONTRIBUTORS contributors · 💻 $COMMITS commits\n🐛 $ISSUES open issues · 🔀 $PRS open pull requests\n\nView this SideStore source on GitHub\nhttps://github.com/alexandrmartins/nuvio-ipa-source\nAdd this source to SideStore\nhttps://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json" \
+          DESCRIPTION=$(cat <<EOF
+Nuvio .ipa source, automatically updated from the official repository.
+https://github.com/NuvioMedia/NuvioMobile
+⭐ $STARS stars · 👥 $CONTRIBUTORS contributors · 💻 $COMMITS commits
+🐛 $ISSUES open issues · 🔀 $PRS open pull requests
+
+View this SideStore source on GitHub
+https://github.com/alexandrmartins/nuvio-ipa-source
+Add this source to SideStore
+https://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json
+EOF
+          )
+
+          jq --arg description "$DESCRIPTION" \
             '.description = $description' source.json > source.tmp
           mv source.tmp source.json
 
