@@ -1,0 +1,16 @@
+{
+  "name": "Nuvio",
+  "identifier": "com.alexandrmartins.nuvio",
+  "sourceURL": "https://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json",
+  "apps": [
+    {
+      "name": "Nuvio",
+      "bundleIdentifier": "app.nuvio.mobile",
+      "developerName": "NuvioMedia",
+      "version": "0.4.13",
+      "versionDate": "2026-08-30",
+      "downloadURL": "https://github.com/NuvioMedia/NuvioMobile/releases/download/0.4.13/nuvio-0.4.13-full-release.ipa",
+      "size": 51726937
+    }
+  ]
+}
