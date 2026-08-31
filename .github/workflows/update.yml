@@ -13,19 +13,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Get latest Nuvio release
         id: release
         run: |
           RELEASE=$(curl -fsSL https://api.github.com/repos/NuvioMedia/NuvioMobile/releases/latest)
+
           VERSION=$(echo "$RELEASE" | jq -r '.tag_name')
           DATE=$(echo "$RELEASE" | jq -r '.published_at')
-          NOTES=$(echo "$RELEASE" | jq -r '.body')
+          NOTES=$(echo "$RELEASE" | jq -r '.body // "No release notes provided."')
+
           IPA=$(echo "$RELEASE" | jq -c '[.assets[] | select(.name | endswith(".ipa"))][0]')
           URL=$(echo "$IPA" | jq -r '.browser_download_url')
           SIZE=$(echo "$IPA" | jq -r '.size')
           SHA=$(echo "$IPA" | jq -r '.digest // "" | sub("^sha256:"; "")')
+
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "No IPA found in the latest release."
+            exit 1
+          fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
@@ -39,7 +47,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Update source
+      - name: Add new version to source
         env:
           VERSION: ${{ steps.release.outputs.version }}
           DATE: ${{ steps.release.outputs.date }}
@@ -48,10 +56,8 @@ jobs:
           SHA: ${{ steps.release.outputs.sha }}
           NOTES: ${{ steps.release.outputs.notes }}
         run: |
-          CURRENT=$(jq -r '.apps[0].versions[0].version' source.json)
-
-          if [ "$CURRENT" = "$VERSION" ]; then
-            echo "Already up to date."
+          if jq -e --arg version "$VERSION" '.apps[0].versions[] | select(.version == $version)' source.json > /dev/null; then
+            echo "Version $VERSION already exists in source.json."
             exit 0
           fi
 
