@@ -8,10 +8,16 @@
       "bundleIdentifier": "app.nuvio.mobile",
       "developerName": "NuvioMedia",
       "localizedDescription": "Nuvio é uma aplicação multimédia de código aberto.",
-      "version": "0.4.13",
-      "versionDate": "2026-08-30",
-      "downloadURL": "https://github.com/NuvioMedia/NuvioMobile/releases/download/0.4.13/nuvio-0.4.13-full-release.ipa",
-      "size": 51726937
+      "iconURL": "https://raw.githubusercontent.com/NuvioMedia/NuvioMobile/main/composeApp/src/commonMain/composeResources/drawable/app_icon.png",
+      "versions": [
+        {
+          "version": "0.4.13",
+          "date": "2026-08-30",
+          "downloadURL": "https://github.com/NuvioMedia/NuvioMobile/releases/download/0.4.13/nuvio-0.4.13-full-release.ipa",
+          "size": 51726937,
+          "localizedDescription": "Versão 0.4.13 do Nuvio."
+        }
+      ]
     }
   ]
 }
