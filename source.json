@@ -1,8 +1,8 @@
 {
   "name": "Nuvio",
   "subtitle": "A free, open-source media app.",
-  "description": "A free, open-source media app for your phone, your desktop, and the TV you already own.",
-  "website": "https://nuvio.tv",
+  "description": "Official Nuvio iOS IPA source, automatically updated from the [Nuvio Mobile GitHub repository](https://github.com/NuvioMedia/NuvioMobile).\n\n[View this SideStore source on GitHub](https://github.com/alexandrmartins/nuvio-ipa-source) · [Add this source to SideStore](https://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json)",
+  "website": "https://github.com/NuvioMedia/NuvioMobile",
   "iconURL": "https://raw.githubusercontent.com/NuvioMedia/NuvioMobile/0.4.11/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
   "tintColor": "#1E88E5",
   "featuredApps": [
