@@ -48,18 +48,12 @@ jobs:
             COMMITS=$(curl -fsSL "$API/commits?per_page=1" | jq 'length')
           fi
 
-          CONTRIBUTORS=$(curl -fsSI -H "Accept: application/vnd.github+json" "$API/contributors?per_page=1" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | tail -1 | grep -o '[0-9]*' || true)
-          if [ -z "$CONTRIBUTORS" ]; then
-            CONTRIBUTORS=$(curl -fsSL "$API/contributors?per_page=1" | jq 'length')
-          fi
-
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "size=$SIZE" >> "$GITHUB_OUTPUT"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "stars=$STARS" >> "$GITHUB_OUTPUT"
-          echo "contributors=$CONTRIBUTORS" >> "$GITHUB_OUTPUT"
           echo "commits=$COMMITS" >> "$GITHUB_OUTPUT"
           echo "issues=$ISSUE_COUNT" >> "$GITHUB_OUTPUT"
           echo "prs=$PRS" >> "$GITHUB_OUTPUT"
@@ -78,7 +72,6 @@ jobs:
           SIZE: ${{ steps.release.outputs.size }}
           SHA: ${{ steps.release.outputs.sha }}
           STARS: ${{ steps.release.outputs.stars }}
-          CONTRIBUTORS: ${{ steps.release.outputs.contributors }}
           COMMITS: ${{ steps.release.outputs.commits }}
           ISSUES: ${{ steps.release.outputs.issues }}
           PRS: ${{ steps.release.outputs.prs }}
@@ -87,7 +80,7 @@ jobs:
           printf '%s\n' \
             'Nuvio .ipa source, automatically updated from the official repository.' \
             'https://github.com/NuvioMedia/NuvioMobile' \
-            "⭐ $STARS stars · 👥 $CONTRIBUTORS contributors · 💻 $COMMITS commits" \
+            "⭐ $STARS stars · 💻 $COMMITS commits" \
             "🐛 $ISSUES open issues · 🔀 $PRS open pull requests" \
             '' \
             'View this SideStore source on GitHub' \
