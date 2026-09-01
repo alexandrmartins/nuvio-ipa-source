@@ -1,7 +1,7 @@
 {
   "name": "Nuvio",
   "subtitle": "A free, open-source media app.",
-  "description": "Nuvio .ipa source, automatically updated from the official repository.\nhttps://github.com/NuvioMedia/NuvioMobile\n⭐ 3226 stars · 💻 2192 commits\n🐛 332 open issues · 🔀 62 open pull requests\n\nView this SideStore source on GitHub\nhttps://github.com/alexandrmartins/nuvio-ipa-source\nAdd this source to SideStore\nhttps://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json",
+  "description": "Nuvio .ipa source, automatically updated from the official repository.\nhttps://github.com/NuvioMedia/NuvioMobile\n⭐ 3227 stars · 💻 2192 commits\n🐛 332 open issues · 🔀 62 open pull requests\n\nView this SideStore source on GitHub\nhttps://github.com/alexandrmartins/nuvio-ipa-source\nAdd this source to SideStore\nhttps://raw.githubusercontent.com/alexandrmartins/nuvio-ipa-source/main/source.json",
   "website": "https://github.com/NuvioMedia/NuvioMobile",
   "iconURL": "https://raw.githubusercontent.com/NuvioMedia/NuvioMobile/0.4.11/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
   "tintColor": "#1E88E5",
